@@ -1,0 +1,5 @@
+customtkinter
+Pillow
+fonttools
+python-bidi
+PyInstaller

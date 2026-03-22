@@ -1,0 +1,1 @@
+python -m PyInstaller --noconfirm --onefile --windowed --uac-admin --icon "logo.ico" --add-data "engine.py;." --add-data "translations.py;." --add-data "SyrianSegoe_Banner.png;." --add-data "logo.ico;." "app.py"
