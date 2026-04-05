@@ -279,6 +279,7 @@ class SyrianSegoeApp(ctk.CTk):
             subprocess.run(['reg', 'add', reg, '/v', 'Segoe UI (TrueType)', '/t', 'REG_SZ', '/d', 'segoeui_system_mod.ttf', '/f'], check=True)
             subprocess.run(['reg', 'add', reg, '/v', 'Segoe UI Bold (TrueType)', '/t', 'REG_SZ', '/d', 'segoeuib_system_mod.ttf', '/f'], check=True)
             subprocess.run(['reg', 'add', reg, '/v', 'Segoe UI Black (TrueType)', '/t', 'REG_SZ', '/d', 'seguibl_system_mod.ttf', '/f'], check=True)
+            subprocess.run(['reg', 'add', reg, '/v', 'Segoe UI Variable (TrueType)', '/t', 'REG_SZ', '/d', 'segoeui_system_mod.ttf', '/f'], check=True)
 
             messagebox.showinfo("Success", self.t("reboot_msg", is_popup=True))
         except Exception as e: messagebox.showerror("Error", str(e))
