@@ -117,6 +117,13 @@ If you encounter any weird font rendering, app crashes, or bugs, please let me k
 
 ---
 
+## ✅ To-Do List
+-  Native UWP UI
+-  Variable Font Support
+-  Login UI, Welcome Screen and Recovery UI Support
+
+---
+
 ## 🤝 Credits & Acknowledgements
 * **Developer:** Developed by [SyrianTurk](https://github.com/SyrianTurk).
 * **UI Framework:** Built using [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) by Tom Schimansky.
