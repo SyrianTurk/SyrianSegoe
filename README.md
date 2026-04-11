@@ -92,6 +92,10 @@ The following fonts have been tested and work beautifully:
 
 *To revert, simply open the app and click **Restore Original Fonts**.*
 
+## 📹 Video Tutorial
+
+[![](https://img.youtube.com/vi/eORmHhQ7ZIA/maxresdefault.jpg)](https://youtu.be/eORmHhQ7ZIA)
+
 ---
 
 ## 🛠️ Build from Source
