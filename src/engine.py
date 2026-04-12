@@ -4,13 +4,6 @@ import os
 
 print("\n[Engine] Starting Stabilized Grid-Sync Builder...")
 
-latin_reg = sys.argv[1]
-latin_bold = sys.argv[2]
-latin_black = sys.argv[3]
-arab_reg = sys.argv[4]
-arab_bold = sys.argv[5]
-arab_black = sys.argv[6]
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def get_segoe_metrics(segoe_path):
@@ -46,17 +39,14 @@ def prepare_font(path, target_em, suffix, wipe_latin=False):
     font.close()
     return temp_path
 
-def process_weight(latin_path, arabic_path, weight_type):
+def process_weight(latin_path, arabic_path, weight_type, segoe_filename):
     if latin_path == "NONE": return
 
     print(f"\n[Engine] Processing {weight_type} weight...")
-    
-    segoe_map = {"Regular": "segoeui.ttf", "Bold": "segoeuib.ttf", "Black": "seguibl.ttf"}
-    segoe_filename = segoe_map[weight_type]
     segoe_path = os.path.join(os.environ.get('WINDIR', 'C:\\Windows'), 'Fonts', segoe_filename)
     
     if not os.path.exists(segoe_path):
-        print(f"  -> Error: System {segoe_filename} not found.")
+        print(f"  -> Error: System {segoe_filename} not found. Skipping...")
         return
 
     # Phase 0: Get Master Grid
@@ -117,9 +107,19 @@ def process_weight(latin_path, arabic_path, weight_type):
     
     print(f"  -> Success! Saved as: {os.path.basename(output_name)}")
 
+
 # Execution matched pairs
-process_weight(latin_reg, arab_reg, "Regular")
-process_weight(latin_bold, arab_bold, "Bold")
-process_weight(latin_black, arab_black, "Black")
+# Mapping the 12 input arguments from app.py to the 6 System Font Weights
+weights_map = [
+    ("Light", sys.argv[1], sys.argv[7], "segoeuil.ttf"),
+    ("Semilight", sys.argv[2], sys.argv[8], "segoeuisl.ttf"),
+    ("Regular", sys.argv[3], sys.argv[9], "segoeui.ttf"),
+    ("Semibold", sys.argv[4], sys.argv[10], "seguisb.ttf"),
+    ("Bold", sys.argv[5], sys.argv[11], "segoeuib.ttf"),
+    ("Black", sys.argv[6], sys.argv[12], "seguibl.ttf")
+]
+
+for weight_name, lat_path, ara_path, sys_filename in weights_map:
+    process_weight(lat_path, ara_path, weight_name, sys_filename)
 
 print("\n[Engine] All system replacement fonts built successfully!")
