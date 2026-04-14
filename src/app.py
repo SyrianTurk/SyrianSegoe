@@ -159,9 +159,9 @@ class SyrianSegoeApp(ctk.CTk):
         
         # 5 Extra Weights Layout
         weights = [
-            ("light", "Light", 0, 0), 
-            ("semilight", "SemiLight", 0, 1), 
-            ("semibold", "SemiBold", 0, 2),
+            ("light", self.t("light"), 0, 0), 
+            ("semilight", self.t("semilight"), 0, 1), 
+            ("semibold", self.t("semibold"), 0, 2),
             ("bold", self.t("bold"), 2, 0), 
             ("black", self.t("black"), 2, 1)
         ]
@@ -207,12 +207,12 @@ class SyrianSegoeApp(ctk.CTk):
             
             if self.is_variable_font(path):
                 setattr(self, f"{lang}_is_var", True)
-                getattr(self, f"{lang}_lbl").configure(text=f"⭐ [VARIABLE] {os.path.basename(path)}", text_color="#FFA500")
+                getattr(self, f"{lang}_lbl").configure(text=self.t("variable_tag") + os.path.basename(path)}", text_color="#FFA500")
                 
                 # Lock buttons and show Auto-Sliced tag
                 for w in ["light", "semilight", "semibold", "bold", "black"]:
                     getattr(self, f"{lang}_{w}_btn").configure(state="disabled")
-                    getattr(self, f"{lang}_{w}_lbl").configure(text="Auto-Sliced", text_color="#FFA500")
+                    getattr(self, f"{lang}_{w}_lbl").configure(text=self.t("auto_sliced"))
             else:
                 setattr(self, f"{lang}_is_var", False)
                 getattr(self, f"{lang}_lbl").configure(text=os.path.basename(path), text_color="white")
@@ -220,7 +220,7 @@ class SyrianSegoeApp(ctk.CTk):
                 # Unlock buttons and auto-detect
                 for w in ["light", "semilight", "semibold", "bold", "black"]:
                     getattr(self, f"{lang}_{w}_btn").configure(state="normal")
-                    getattr(self, f"{lang}_{w}_lbl").configure(text="None", text_color="gray")
+                    getattr(self, f"{lang}_{w}_lbl").configure(ttext=self.t("none_lbl"), text_color="gray")
                 self.auto_detect(path, lang)
 
     def auto_detect(self, path, lang):
@@ -355,7 +355,7 @@ class SyrianSegoeApp(ctk.CTk):
                 ff_exe = self.get_fontforge_path() 
             else: return 
 
-        self.apply_btn.configure(text="Processing...", state="disabled"); self.update()
+        self.apply_btn.configure(text=self.t("processing"), state="disabled"); self.update()
         curr_dir = os.path.dirname(os.path.abspath(__file__))
         temp_files_to_clean = []
         
