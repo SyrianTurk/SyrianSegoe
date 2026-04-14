@@ -21,9 +21,9 @@ SyrianSegoe is a powerful, system-wide font replacement tool for Windows. It com
     <td width="50%" valign="top">
 
 ## ✨ Features
-* **True System-Wide Replacement:** Works flawlessly on UWP apps, the Windows 11 Taskbar, Settings, and legacy Win32 applications.
+* **True System-Wide Replacement:** Works flawlessly on UWP apps, the Windows 11 Taskbar, Settings, Welcome and Login UI.
 * **Arabic UI Font Support:** Fully supports combining a primary Latin font with a secondary Arabic base font for a perfect bilingual UI.
-* **Auto-Detection:** Automatically detects Bold and Black font weights when you select a Regular font file.
+* **Auto-Detection:** Automatically detects all font weights when you select a Regular font file.
 * **Built-in Backup & Restore:** Automatically backs up your original Segoe UI fonts and allows you to restore them with a single click.
 * **Multi-language UI:** Available in English, Turkish, and Arabic.
 
@@ -45,14 +45,17 @@ In the past, the standard way to change Windows fonts was using the **Registry `
 ---
 
 ## 🔠 Supported Fonts
-Currently, the program supports standard `.ttf` and `.otf` font files. 
-> ⚠️ **Note:** Variable Fonts are **not** supported at this time. Please use static font files (Regular, Bold, Black).
+All fonts designed for UI usage are fully supported, **including Variable Fonts**. Even if your chosen font is missing certain static weights (such as Light or SemiBold), the program will automatically slice or generate the missing weights for you.
 
 ### Tested & Verified Fonts
 The following fonts have been tested and work beautifully:
-* **Latin:** SF Pro Display, MiSans, Ubuntu
+* **Latin:** SF Pro Display, MiSans, Ubuntu, Instagram Sans
 * **Arabic:** SF Arabic, Noto Naskh Arabic, Cairo
 
+
+### Tested on:
+* **Windows 10:** 21H2
+* **Windows 11:** 24H2, 25H2
 ---
 
 ### 📸 Gallery
@@ -123,9 +126,7 @@ If you encounter any weird font rendering, app crashes, or bugs, please let me k
 
 ## ✅ To-Do List
 -  Native UWP UI
--  Variable Font Support
 -  Font Library
--  Login UI, Welcome Screen and Recovery UI Support
 -  Advanced Font Preview
 -  Emoji Support
 
