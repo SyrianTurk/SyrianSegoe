@@ -81,6 +81,16 @@ The following fonts have been tested and work beautifully:
       <img src="screenshots/MiSans+NotoNakshArabic.png" width="100%">
     </td>
   </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <b>Roboto + NotoNaksh Arabic (Login Screen)</b><br>
+      <img src="screenshots/Roboto+NotoNakshArabic_LoginUI.png" width="100%">
+    </td>
+    <td width="50%" valign="top">
+      <b>SF Pro Display + SF Arabic (Lock Screen)</b><br>
+      <img src="screenshots/SFProDisplay+SFArabic_LockUI.png" width="100%">
+    </td>
+  </tr>
 </table>
 
 ---
