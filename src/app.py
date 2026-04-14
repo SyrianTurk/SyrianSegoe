@@ -205,9 +205,11 @@ class SyrianSegoeApp(ctk.CTk):
             setattr(self, f"{lang}_reg", path)
             getattr(self, f"{lang}_frame").pack(pady=5)
             
-            if self.is_variable_font(path):
+           if self.is_variable_font(path):
                 setattr(self, f"{lang}_is_var", True)
-                getattr(self, f"{lang}_lbl").configure(text=self.t("variable_tag") + os.path.basename(path)", text_color="#FFA500")
+                getattr(self, f"{lang}_lbl").configure(
+                text=self.t("variable_tag") + os.path.basename(path),
+                text_color="#FFA500"
                 
                 # Lock buttons and show Auto-Sliced tag
                 for w in ["light", "semilight", "semibold", "bold", "black"]:
