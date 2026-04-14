@@ -126,6 +126,8 @@ If you encounter any weird font rendering, app crashes, or bugs, please let me k
 -  Variable Font Support
 -  Font Library
 -  Login UI, Welcome Screen and Recovery UI Support
+-  Advanced Font Preview
+-  Emoji Support
 
 ---
 
