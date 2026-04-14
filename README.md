@@ -120,7 +120,7 @@ The following fonts have been tested and work beautifully:
 2. **Install Python dependencies:**
    ```bash
    pip install -r src/requirements.txt
-3. **Run the bulid command:**
+3. **Run the build command:**
    ```bash
    python -m PyInstaller --noconfirm --onefile --windowed --uac-admin --icon "logo.ico" --add-data "engine.py;." --add-data "translations.py;." --add-data "SyrianSegoe_Banner.png;." --add-data "logo.ico;." "app.py"
 
