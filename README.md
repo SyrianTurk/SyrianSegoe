@@ -113,8 +113,6 @@ The following fonts have been tested and work beautifully:
 
 ## 🛠️ Build from Source
 
-If you prefer to run the script directly from the source code instead of an executable:
-
 1. **Clone the repository:**
    ```bash
    git clone [https://github.com/SyrianTurk/SyrianSegoe.git](https://github.com/SyrianTurk/SyrianSegoe.git)
