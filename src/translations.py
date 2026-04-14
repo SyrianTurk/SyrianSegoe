@@ -32,7 +32,7 @@ DATA = {
         "sub_text": "Yeni nesil Windows sistem yazı tipi değiştirme aracı",
         "latin_sec": "1. Birincil Latin Yazı Tipi",
         "arab_sec": "2. Arapça Yazı Tipi (İsteğe bağlı)",
-        "arabic_sec": "2. Arapça Yazı Tipi (İsteğe bağlı)"
+        "arabic_sec": "2. Arapça Yazı Tipi (İsteğe bağlı)",
         "browse": "{} Normal Yazı Tipini Seç...",
         "clear": "✖ Temizle",
         "bold": "Kalın tipi Seç",
