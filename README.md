@@ -107,7 +107,7 @@ The following fonts have been tested and work beautifully:
 
 ## 📹 Video Tutorial
 
-[![](https://img.youtube.com/vi/eORmHhQ7ZIA/maxresdefault.jpg)](https://youtu.be/eORmHhQ7ZIA)
+[![](https://img.youtube.com/vi/lWNRROanov0?si/maxresdefault.jpg)](https://youtu.be/lWNRROanov0?si)
 
 ---
 
