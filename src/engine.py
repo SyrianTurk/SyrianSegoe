@@ -13,23 +13,29 @@ def get_segoe_metrics(segoe_path):
     f.close()
     return em
 
-def prepare_font(path, target_em, suffix, wipe_latin=False, strip_ligatures=False):
+def prepare_font(path, target_em, suffix, wipe_latin=False, strip_ligatures=False, sync_symbols_only=False):
+    """Safely opens a font, syncs the grid, wipes Latin if needed, and saves it."""
     if path == "NONE" or not os.path.exists(path):
         return None
     
     temp_path = os.path.join(BASE_DIR, f"temp_{suffix}.ttf")
     font = fontforge.open(path)
+
     
-    # 1. Grid Sync (BETWEEN ARABIC AND LATIN FONTS)
-    if font.em != target_em:
-        print(f"     -> Syncing {os.path.basename(path)} grid to {target_em}...")
-        font.em = target_em
-    
-    # 2. Auto-Detect & Map (Wiping existing Latin)
+    # 1. Auto-Detect & Map (Wiping existing Latin)
     if wipe_latin:
         print(f"     -> Auto-detecting and clearing Latin slots in {os.path.basename(path)}...")
         font.selection.select(("ranges",), 0x0020, 0x024F)
         font.selection.select(("more", "ranges",), 0x1E00, 0x1EFF)
+        font.clear()
+
+    # 2. Clear Symbols/Punctuation to "sync" them from Segoe (Latin-only mode)
+    if sync_symbols_only:
+        print(f"     -> Clearing symbols/punctuation in {os.path.basename(path)} to sync from system...")
+        font.selection.select(("ranges",), 0x0020, 0x007F) # Basic Latin range
+        font.selection.select(("less", "ranges",), 0x0030, 0x0039) # Keep 0-9
+        font.selection.select(("less", "ranges",), 0x0041, 0x005A) # Keep A-Z
+        font.selection.select(("less", "ranges",), 0x0061, 0x007A) # Keep a-z
         font.clear()
         
     # 3. Strip GSUB Lookups
@@ -52,11 +58,22 @@ def process_weight(latin_path, arabic_path, weight_type, segoe_filename):
         print(f"  -> Error: System {segoe_filename} not found. Skipping...")
         return
 
-    # Phase 0: Get Master Grid
-    target_em = get_segoe_metrics(segoe_path)
+    # Phase 0: Determine Target Grid
+    is_latin_only = (arabic_path == "NONE")
+    if is_latin_only:
+        # Latin only mode: Preserve Latin grid (prevent character distortion)
+        # Sync symbols to Latin EM instead
+        lf = fontforge.open(latin_path)
+        target_em = lf.em
+        lf.close()
+        print(f"  -> Latin-only mode: Preserved original grid ({target_em} EM)")
+    else:
+        # Dual mode: Sync everything to Segoe standard grid
+        target_em = get_segoe_metrics(segoe_path)
+        print(f"  -> Dual mode: Syncing to Segoe grid ({target_em} EM)")
 
     # Phase 1: Prepare Latin (Sync Grid)
-    l_temp = prepare_font(latin_path, target_em, f"lat_{weight_type}", strip_ligatures=True)
+    l_temp = prepare_font(latin_path, target_em, f"lat_{weight_type}", strip_ligatures=True, sync_symbols_only=is_latin_only)
 
     # Phase 2: Prepare Arabic (Sync Grid + Wipe Latin)
     a_temp = prepare_font(arabic_path, target_em, f"ara_{weight_type}", wipe_latin=True)
@@ -64,7 +81,20 @@ def process_weight(latin_path, arabic_path, weight_type, segoe_filename):
     # Phase 3: Prepare Segoe Symbols
     s_temp = os.path.join(BASE_DIR, f"temp_sym_{weight_type}.ttf")
     sf = fontforge.open(segoe_path)
-    sf.selection.select(("ranges",), 0x0000, 0x08FF)
+
+    # Sync Segoe Symbols grid to target_em (Crucial for Latin-only mode)
+    if sf.em != target_em:
+        sf.em = target_em
+
+    if is_latin_only:
+        # Sync symbols/punctuation from Segoe: Wipe ONLY alphanumeric characters
+        sf.selection.select(("ranges",), 0x0030, 0x0039) # 0-9
+        sf.selection.select(("more", "ranges",), 0x0041, 0x005A) # A-Z
+        sf.selection.select(("more", "ranges",), 0x0061, 0x007A) # a-z
+    else:
+        # Dual mode: Wipe basic Latin/Greek blocks to prioritize chosen fonts
+        sf.selection.select(("ranges",), 0x0000, 0x08FF)
+
     sf.clear()
     for lookup in sf.gsub_lookups: sf.removeLookup(lookup)
     for lookup in sf.gpos_lookups: sf.removeLookup(lookup)
