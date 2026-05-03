@@ -20,15 +20,19 @@ def prepare_font(path, target_em, suffix, wipe_latin=False, strip_ligatures=Fals
     temp_path = os.path.join(BASE_DIR, f"temp_{suffix}.ttf")
     font = fontforge.open(path)
     
+    # 1. Grid Sync (BETWEEN ARABIC AND LATIN FONTS)
+    if font.em != target_em:
+        print(f"     -> Syncing {os.path.basename(path)} grid to {target_em}...")
+        font.em = target_em
     
-    # 1. Auto-Detect & Map (Wiping existing Latin)
+    # 2. Auto-Detect & Map (Wiping existing Latin)
     if wipe_latin:
         print(f"     -> Auto-detecting and clearing Latin slots in {os.path.basename(path)}...")
         font.selection.select(("ranges",), 0x0020, 0x024F)
         font.selection.select(("more", "ranges",), 0x1E00, 0x1EFF)
         font.clear()
         
-    # 2. Strip GSUB Lookups
+    # 3. Strip GSUB Lookups
     if strip_ligatures:
         print(f"     -> Stripping ligatures (GSUB) from {os.path.basename(path)}...")
         for lookup in font.gsub_lookups:
