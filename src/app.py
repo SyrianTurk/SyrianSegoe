@@ -52,7 +52,7 @@ class SyrianSegoeApp(ctk.CTk):
         icon_path = resource_path("logo.ico")
         if os.path.exists(icon_path):
             self.iconbitmap(icon_path)
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("SyrianSegoe.App.1.1")
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("SyrianSegoe.App.0.3")
 
         if not is_admin():
             messagebox.showwarning("Admin", self.t("admin_warn", is_popup=True))
@@ -308,20 +308,14 @@ class SyrianSegoeApp(ctk.CTk):
         static_font.save(out_path)
 
     def create_variable_spoof(self, input_path, output_path):
-        from fontTools.ttLib import TTFont
-        font = TTFont(input_path)
-        target_family = "Segoe UI Variable"
-        target_ps_name = "SegoeUI-Variable"
-        
-        for record in font['name'].names:
-            if record.nameID in [1, 4, 16, 21]: 
-                if record.platformID == 3: record.string = target_family.encode('utf-16-be')
-                else: record.string = target_family.encode('utf-8')
-            elif record.nameID == 6: 
-                if record.platformID == 3: record.string = target_ps_name.encode('utf-16-be')
-                else: record.string = target_ps_name.encode('utf-8')
-                
-        font.save(output_path)
+        """
+        IF AIN'T BROKEN DON'T TOUCH IT :) 
+        """
+        import shutil
+        try:
+            shutil.copy(input_path, output_path)
+        except Exception as e:
+            print(f"Error copying variable font: {e}")
 
     def resolve_weights(self, base_path, is_var, reg_path, light_path, semilight_path, semibold_path, bold_path, black_path, lang_prefix):
         paths = []
