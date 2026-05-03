@@ -7,34 +7,33 @@ print("\n[Engine] Starting Stabilized Grid-Sync Builder...")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def get_segoe_metrics(segoe_path):
-    """Opens Segoe UI just to steal its native grid (EM) and metrics."""
+    """Opens Segoe UI just to get its EM grid."""
     f = fontforge.open(segoe_path)
     em = f.em
-    ascent = f.ascent
-    descent = f.descent
     f.close()
-    return em, ascent, descent
+    return em
 
-def prepare_font(path, target_em, suffix, wipe_latin=False):
-    """Safely opens a font, syncs the grid, wipes Latin if needed, and saves it."""
+def prepare_font(path, target_em, suffix, wipe_latin=False, strip_ligatures=False):
     if path == "NONE" or not os.path.exists(path):
         return None
     
     temp_path = os.path.join(BASE_DIR, f"temp_{suffix}.ttf")
     font = fontforge.open(path)
     
-    # 1. Grid Sync (The Requirement)
-    if font.em != target_em:
-        print(f"     -> Syncing {os.path.basename(path)} grid to {target_em}...")
-        font.em = target_em
     
-    # 2. Auto-Detect & Map (Wiping existing Latin)
+    # 1. Auto-Detect & Map (Wiping existing Latin)
     if wipe_latin:
         print(f"     -> Auto-detecting and clearing Latin slots in {os.path.basename(path)}...")
         font.selection.select(("ranges",), 0x0020, 0x024F)
         font.selection.select(("more", "ranges",), 0x1E00, 0x1EFF)
         font.clear()
         
+    # 2. Strip GSUB Lookups
+    if strip_ligatures:
+        print(f"     -> Stripping ligatures (GSUB) from {os.path.basename(path)}...")
+        for lookup in font.gsub_lookups:
+            font.removeLookup(lookup)
+
     font.generate(temp_path)
     font.close()
     return temp_path
@@ -50,10 +49,10 @@ def process_weight(latin_path, arabic_path, weight_type, segoe_filename):
         return
 
     # Phase 0: Get Master Grid
-    target_em, s_asc, s_desc = get_segoe_metrics(segoe_path)
+    target_em = get_segoe_metrics(segoe_path)
 
     # Phase 1: Prepare Latin (Sync Grid)
-    l_temp = prepare_font(latin_path, target_em, f"lat_{weight_type}")
+    l_temp = prepare_font(latin_path, target_em, f"lat_{weight_type}", strip_ligatures=True)
 
     # Phase 2: Prepare Arabic (Sync Grid + Wipe Latin)
     a_temp = prepare_font(arabic_path, target_em, f"ara_{weight_type}", wipe_latin=True)
@@ -87,14 +86,8 @@ def process_weight(latin_path, arabic_path, weight_type, segoe_filename):
     final_font.os2_weight = segoe_meta.os2_weight
     final_font.os2_stylemap = segoe_meta.os2_stylemap
     final_font.macstyle = segoe_meta.macstyle
-    
-    # Enforce Segoe Metrics for UI Stability
-    final_font.ascent = segoe_meta.ascent
-    final_font.descent = segoe_meta.descent
-    final_font.os2_winascent = segoe_meta.os2_winascent
-    final_font.os2_windescent = segoe_meta.os2_windescent
-    final_font.hhea_ascent = segoe_meta.hhea_ascent
-    final_font.hhea_descent = segoe_meta.hhea_descent
+
+
     segoe_meta.close()
 
     output_name = os.path.join(BASE_DIR, f"{segoe_filename.split('.')[0]}_system_mod.ttf")
