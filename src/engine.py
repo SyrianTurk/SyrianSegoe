@@ -31,11 +31,19 @@ def prepare_font(path, target_em, suffix, wipe_latin=False, strip_ligatures=Fals
 
     # 2. Clear Symbols/Punctuation to "sync" them from Segoe (Latin-only mode)
     if sync_symbols_only:
-        print(f"     -> Clearing symbols/punctuation in {os.path.basename(path)} to sync from system...")
+        print(f"     -> Clearing symbols, punctuation, and Arabic in {os.path.basename(path)} to sync from system...")
         font.selection.select(("ranges",), 0x0020, 0x007F) # Basic Latin range
         font.selection.select(("less", "ranges",), 0x0030, 0x0039) # Keep 0-9
         font.selection.select(("less", "ranges",), 0x0041, 0x005A) # Keep A-Z
         font.selection.select(("less", "ranges",), 0x0061, 0x007A) # Keep a-z
+        
+        # Clear Arabic ranges to ensure joining logic from Segoe UI is used correctly without interference
+        font.selection.select(("more", "ranges",), 0x0600, 0x06FF) # Arabic
+        font.selection.select(("more", "ranges",), 0x0750, 0x077F) # Arabic Supplement
+        font.selection.select(("more", "ranges",), 0x08A0, 0x08FF) # Arabic Extended-A
+        font.selection.select(("more", "ranges",), 0xFB50, 0xFDFF) # Presentation Forms A
+        font.selection.select(("more", "ranges",), 0xFE70, 0xFEFF) # Presentation Forms B
+
         font.clear()
         
     # 3. Strip GSUB Lookups
@@ -91,13 +99,17 @@ def process_weight(latin_path, arabic_path, weight_type, segoe_filename):
         sf.selection.select(("ranges",), 0x0030, 0x0039) # 0-9
         sf.selection.select(("more", "ranges",), 0x0041, 0x005A) # A-Z
         sf.selection.select(("more", "ranges",), 0x0061, 0x007A) # a-z
+        sf.clear()
+        # Do NOT remove GSUB/GPOS lookups here. 
+        # This preserves Arabic joining logic (init, medi, fina, isol) from Segoe UI.
     else:
-        # Dual mode: Wipe basic Latin/Greek blocks to prioritize chosen fonts
+        # Dual mode: Wipe basic Latin/Greek/Arabic blocks to prioritize chosen fonts
         sf.selection.select(("ranges",), 0x0000, 0x08FF)
+        sf.clear()
+        # In dual mode, we strip lookups as they are provided by the chosen Latin/Arabic fonts.
+        for lookup in sf.gsub_lookups: sf.removeLookup(lookup)
+        for lookup in sf.gpos_lookups: sf.removeLookup(lookup)
 
-    sf.clear()
-    for lookup in sf.gsub_lookups: sf.removeLookup(lookup)
-    for lookup in sf.gpos_lookups: sf.removeLookup(lookup)
     sf.generate(s_temp)
     sf.close()
 
