@@ -3,6 +3,12 @@ import sys
 import os
 import gc
 
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
+except Exception:
+    pass
+
 print("\n[Engine] Starting Stabilized Grid-Sync Builder...")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
