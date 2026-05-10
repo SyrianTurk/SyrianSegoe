@@ -122,7 +122,7 @@ The following fonts have been tested and work beautifully:
    pip install -r src/requirements.txt
 3. **Run the build command:**
    ```bash
-   python -m PyInstaller --noconfirm --onefile --windowed --uac-admin --icon "logo.ico" --add-data "engine.py;." --add-data "translations.py;." --add-data "SyrianSegoe_Banner.png;." --add-data "logo.ico;." "app.py"
+   python -m PyInstaller --noconfirm --onefile --windowed --icon "src/logo.ico" --add-data "src/engine.py;." --add-data "src/SyrianSegoe_Banner.png;." --add-data "src/SyrianSegoe_Banner_Light.png;." --add-data "src/logo.ico;." "src/app.py"
 
 ## 🐛 Report a Bug
 If you encounter any weird font rendering, app crashes, or bugs, please let me know! 
