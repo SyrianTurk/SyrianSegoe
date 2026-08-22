@@ -109,6 +109,7 @@ class SyrianSegoeApp(ctk.CTk):
         self.arabic_italic_is_var = False
 
         # --- Window Setup ---
+        self.follow_system_lang = True
         self.detect_language()
         self.title("SyrianSegoe")
         self.set_initial_geometry()
@@ -133,6 +134,14 @@ class SyrianSegoeApp(ctk.CTk):
         self.enable_italic_var = ctk.BooleanVar(value=False)
         self.merging_mode_var = ctk.StringVar(value="visual")
         self.current_appearance_mode = "System"
+
+        # Listen for live OS theme changes so hardcoded text colors follow
+        # (e.g. switching dark/light in Windows Settings while the app is open)
+        try:
+            from customtkinter.windows.widgets.appearance_mode.appearance_mode_tracker import AppearanceModeTracker
+            AppearanceModeTracker.add(lambda _mode: self.refresh_ui_text(), self)
+        except Exception:
+            pass
 
         # --- Layout Configuration ---
         self.grid_columnconfigure(1, weight=1)
@@ -279,9 +288,10 @@ class SyrianSegoeApp(ctk.CTk):
         self.lang_lbl = ctk.CTkLabel(lang_container, text=self.t("lang_lbl"), font=self.font_bold)
         self.lang_lbl.pack(side="left", padx=10)
         
-        self.lang_menu = ctk.CTkOptionMenu(lang_container, values=["System Language", "English", "Türkçe", "العربية"], 
+        self.lang_menu = ctk.CTkOptionMenu(lang_container, values=[self.t("system_lang"), "English", "Türkçe", "العربية", "中文"], 
                                            command=self.change_lang_event, font=self.font_base, dropdown_font=self.font_base)
         self.lang_menu.pack(side="left", padx=10)
+        self.lang_menu.set(self._lang_menu_label())
 
         appearance_container = ctk.CTkFrame(self.settings_frame, fg_color="transparent")
         appearance_container.pack(fill="x", padx=20, pady=10)
@@ -373,6 +383,7 @@ class SyrianSegoeApp(ctk.CTk):
         """Returns a dictionary representing the current UI state."""
         return {
             "lang": self.current_lang,
+            "follow_system_lang": self.follow_system_lang,
             "theme": self.current_appearance_mode,
             "vars": {
                 "show_log": self.show_log_var.get(),
@@ -428,6 +439,7 @@ class SyrianSegoeApp(ctk.CTk):
             with open(path, 'r', encoding='utf-8') as f:
                 state = json.load(f)
             self.current_lang = state["lang"]
+            self.follow_system_lang = state.get("follow_system_lang", True)
             self.current_appearance_mode = state["theme"]
             ctk.set_appearance_mode(self.current_appearance_mode)
             for key, val in state["vars"].items(): getattr(self, f"{key}_var").set(val)
@@ -528,14 +540,27 @@ class SyrianSegoeApp(ctk.CTk):
         self.save_config()
         self.refresh_ui_text()
 
+    def _effective_mode(self):
+        """Resolve the actually applied appearance: 'light' or 'dark'.
+        When set to 'System', query the OS theme directly because
+        ctk.get_appearance_mode() lags until its tracker loop updates."""
+        mode = getattr(self, "current_appearance_mode", "System")
+        if mode != "System":
+            return mode.lower()
+        try:
+            import darkdetect
+            return "dark" if darkdetect.theme() == "Dark" else "light"
+        except Exception:
+            return ctk.get_appearance_mode().lower()
+
     def _theme_text_color(self):
-        return "black" if ctk.get_appearance_mode().lower() == "light" else "white"
+        return "black" if self._effective_mode() == "light" else "white"
 
     def _theme_secondary_text_color(self):
-        return "gray20" if ctk.get_appearance_mode().lower() == "light" else "gray"
+        return "gray20" if self._effective_mode() == "light" else "gray"
 
     def _theme_auto_tag_color(self):
-        return "#0066cc" if ctk.get_appearance_mode().lower() == "light" else "#00FFCC"
+        return "#0066cc" if self._effective_mode() == "light" else "#00FFCC"
 
     def ensure_fonttools(self):
         """Silently try to install fonttools if missing"""
@@ -561,14 +586,22 @@ class SyrianSegoeApp(ctk.CTk):
     def detect_language(self):
         try:
             lang_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
-            lang_map = {1055: "tr", 1025: "ar", 1033: "en", 2057: "en"}
+            lang_map = {1055: "tr", 1025: "ar", 1033: "en", 2057: "en", 2052: "zh", 1028: "zh"}
             self.current_lang = lang_map.get(lang_id, "en")
         except: self.current_lang = "en"
+        self.follow_system_lang = True
+
+    def _lang_menu_label(self):
+        if getattr(self, "follow_system_lang", True):
+            return self.t("system_lang")
+        return {"en": "English", "tr": "Türkçe", "ar": "العربية", "zh": "中文"}.get(self.current_lang, "English")
 
     def change_lang_event(self, choice):
-        mapping = {"English": "en", "Türkçe": "tr", "العربية": "ar"}
-        if choice == "System Language": self.detect_language()
-        else: self.current_lang = mapping[choice]
+        mapping = {"English": "en", "Türkçe": "tr", "العربية": "ar", "中文": "zh"}
+        if choice == self.t("system_lang"): self.detect_language()
+        else:
+            self.current_lang = mapping[choice]
+            self.follow_system_lang = False
         self.save_config()
         self.refresh_ui_text()
 
@@ -642,6 +675,10 @@ class SyrianSegoeApp(ctk.CTk):
         mode_key_map = {"System": "mode_system", "Light": "mode_light", "Dark": "mode_dark"}
         self.appearance_mode_menu.set(self.t(mode_key_map.get(self.current_appearance_mode, "mode_system")))
 
+        # Language menu follows the current UI language
+        self.lang_menu.configure(values=[self.t("system_lang"), "English", "Türkçe", "العربية", "中文"])
+        self.lang_menu.set(self._lang_menu_label())
+
         # تحديث محاذاة صناديق الاختيار (RTL Support)
         self.show_log_chk.configure(text=self.t("settings_show_log"))
         self.show_log_chk.pack_configure(anchor=anchor, fill="none")
@@ -697,8 +734,9 @@ class SyrianSegoeApp(ctk.CTk):
             getattr(self, f"{lang}_local_btn").pack(side=side, padx=5, expand=True)
 
             weight_keys = getattr(self, f"{lang}_weight_keys", ["light", "semilight", "semibold", "bold", "black"])
-            for weight_key in weight_keys:
-                getattr(self, f"{lang}_{weight_key}_btn").configure(text=self.t(weight_key))
+            getattr(self, f"{lang}_weight_toggle").configure(text=self.t("weights_toggle"))
+            self.update_weight_menu(lang)
+            self.update_weight_labels(lang)
 
             # Update Labels based on current paths (for state recovery)
             reg_p = getattr(self, f"{lang}_reg")
@@ -707,15 +745,7 @@ class SyrianSegoeApp(ctk.CTk):
                 text_color = "#FFA500" if getattr(self, f"{lang}_is_var") else theme_text
                 getattr(self, f"{lang}_lbl").configure(text=txt, text_color=text_color)
                 getattr(self, f"{lang}_frame").pack(pady=5)
-                for w in weight_keys:
-                    w_lbl = getattr(self, f"{lang}_{w}_lbl")
-                    w_path = getattr(self, f"{lang}_{w}")
-                    if getattr(self, f"{lang}_is_var"):
-                        w_lbl.configure(text=self.t("auto_sliced"), text_color=self._theme_auto_tag_color())
-                    elif w_path:
-                        w_lbl.configure(text=self.t("auto_tag") + os.path.basename(w_path) if "temp_" not in w_path else os.path.basename(w_path), text_color=self._theme_auto_tag_color())
-                    else:
-                        w_lbl.configure(text=self.t("none_lbl"), text_color="gray")
+                self.update_weight_labels(lang)
             else:
                 getattr(self, f"{lang}_lbl").configure(text=self.t("no_file"), text_color="gray")
 
@@ -740,31 +770,89 @@ class SyrianSegoeApp(ctk.CTk):
         
         frame = ctk.CTkFrame(section_frame, fg_color="transparent"); setattr(self, f"{lang}_frame", frame)
         
-        # 5 Extra Weights Layout
+        # 5 Extra Weights Layout (Windows-style dropdown, hidden unless toggled on)
         if weight_keys is None:
             weight_keys = ["light", "semilight", "semibold", "bold", "black"]
         setattr(self, f"{lang}_weight_keys", weight_keys)
-        weights = []
-        layout_positions = [(0,0), (0,1), (0,2), (2,0), (2,1)]
-        for idx, w_val in enumerate(weight_keys):
-            r, c = layout_positions[idx] if idx < len(layout_positions) else (2, idx - 2)
-            weights.append((w_val, self.t(w_val), r, c))
         
-        for w_val, w_txt, r, c in weights:
-            btn = ctk.CTkButton(frame, text=w_txt, width=100, command=lambda l=lang, w=w_val: self.select_weight(l, w), font=self.font_base)
-            btn.grid(row=r, column=c, padx=5, pady=2); setattr(self, f"{lang}_{w_val}_btn", btn)
-            w_lbl = ctk.CTkLabel(frame, text=self.t("none_lbl"), text_color="gray", font=self.font_small)
-            w_lbl.grid(row=r+1, column=c); setattr(self, f"{lang}_{w_val}_lbl", w_lbl)
+        weight_toggle = ctk.CTkSwitch(frame, text=self.t("weights_toggle"),
+                                      command=lambda l=lang: self.toggle_weight_control(l),
+                                      font=self.font_small)
+        weight_toggle.grid(row=0, column=0, columnspan=3, padx=5, pady=(5, 0))
+        setattr(self, f"{lang}_weight_toggle", weight_toggle)
+        
+        weight_menu = ctk.CTkOptionMenu(frame, width=170,
+                                        command=lambda choice, l=lang: self.on_weight_menu(choice, l),
+                                        font=self.font_base, dropdown_font=self.font_base)
+        weight_menu.grid(row=1, column=0, columnspan=3, padx=5, pady=(5, 0))
+        setattr(self, f"{lang}_weight_menu", weight_menu)
+        
+        weights_container = ctk.CTkFrame(frame, fg_color="transparent")
+        setattr(self, f"{lang}_weights_container", weights_container)
+        weights_container.grid(row=2, column=0, columnspan=3)
+        
+        for idx, w_val in enumerate(weight_keys):
+            w_lbl = ctk.CTkLabel(weights_container, text="", text_color="gray", font=self.font_small, anchor="w")
+            w_lbl.grid(row=idx, column=0, sticky="w", padx=8)
+            setattr(self, f"{lang}_{w_val}_lbl", w_lbl)
+        
+        # Hidden by default; only shown when the user enables independent weight control
+        weight_menu.grid_remove()
+        weights_container.grid_remove()
+        
+        self.update_weight_menu(lang)
+        self.update_weight_labels(lang)
+
+    def toggle_weight_control(self, lang):
+        """Show/hide the weight dropdown and status rows based on the switch."""
+        on = getattr(self, f"{lang}_weight_toggle").get()
+        menu = getattr(self, f"{lang}_weight_menu")
+        container = getattr(self, f"{lang}_weights_container")
+        if on:
+            menu.grid()
+            container.grid()
+        else:
+            menu.grid_remove()
+            container.grid_remove()
+
+    def update_weight_menu(self, lang):
+        """Fill the weight dropdown options (rebuilt on language switch)."""
+        weight_keys = getattr(self, f"{lang}_weight_keys", ["light", "semilight", "semibold", "bold", "black"])
+        menu = getattr(self, f"{lang}_weight_menu")
+        menu.configure(values=[self.t(w) for w in weight_keys])
+        menu.set(self.t("weights_prompt"))
+
+    def on_weight_menu(self, choice, lang):
+        """Dropdown picked a weight -> open file dialog, then reset the prompt."""
+        weight_keys = getattr(self, f"{lang}_weight_keys", ["light", "semilight", "semibold", "bold", "black"])
+        for w in weight_keys:
+            if choice == self.t(w):
+                self.select_weight(lang, w)
+                break
+        self.update_weight_menu(lang)
+
+    def update_weight_labels(self, lang):
+        """Refresh per-weight status labels: 'Weight: file / none / auto-sliced'."""
+        weight_keys = getattr(self, f"{lang}_weight_keys", ["light", "semilight", "semibold", "bold", "black"])
+        for w in weight_keys:
+            lbl = getattr(self, f"{lang}_{w}_lbl")
+            path = getattr(self, f"{lang}_{w}")
+            if getattr(self, f"{lang}_is_var", False):
+                txt, color = f"{self.t(w)}: {self.t('auto_sliced')}", self._theme_auto_tag_color()
+            elif path:
+                shown = self.t("auto_tag") + os.path.basename(path) if "temp_" not in path else os.path.basename(path)
+                txt, color = f"{self.t(w)}: {shown}", self._theme_auto_tag_color()
+            else:
+                txt, color = f"{self.t(w)}: {self.t('none_lbl')}", "gray"
+            lbl.configure(text=txt, text_color=color)
 
     def unload_section(self, lang):
         weight_keys = getattr(self, f"{lang}_weight_keys", ["light", "semilight", "semibold", "bold", "black"])
         for w in ["reg"] + weight_keys:
             setattr(self, f"{lang}_{w}", None)
-            if w != "reg":
-                getattr(self, f"{lang}_{w}_lbl").configure(text=self.t("none_lbl"), text_color="gray")
-                getattr(self, f"{lang}_{w}_btn").configure(state="normal")
-                
         setattr(self, f"{lang}_is_var", False)
+        getattr(self, f"{lang}_weight_menu").configure(state="normal")
+        self.update_weight_labels(lang)
         getattr(self, f"{lang}_lbl").configure(text=self.t("no_file"), text_color="gray")
         getattr(self, f"{lang}_frame").pack_forget()
         self.save_config()
@@ -805,18 +893,16 @@ class SyrianSegoeApp(ctk.CTk):
                     text=self.t("variable_tag") + os.path.basename(path),
                     text_color="#FFA500"
                 )
-                # Lock buttons and show Auto-Sliced tag
-                for w in weight_keys:
-                    getattr(self, f"{lang}_{w}_btn").configure(state="disabled")
-                    getattr(self, f"{lang}_{w}_lbl").configure(text=self.t("auto_sliced"), text_color=self._theme_auto_tag_color())
+                # Lock weight dropdown and show Auto-Sliced tag
+                getattr(self, f"{lang}_weight_menu").configure(state="disabled")
+                self.update_weight_labels(lang)
             else:
                 setattr(self, f"{lang}_is_var", False)
                 getattr(self, f"{lang}_lbl").configure(text=os.path.basename(path), text_color=self._theme_text_color())
                 
-                # Unlock buttons and auto-detect
-                for w in weight_keys:
-                    getattr(self, f"{lang}_{w}_btn").configure(state="normal")
-                    getattr(self, f"{lang}_{w}_lbl").configure(text=self.t("none_lbl"), text_color="gray")
+                # Unlock weight dropdown and auto-detect
+                getattr(self, f"{lang}_weight_menu").configure(state="normal")
+                self.update_weight_labels(lang)
                 self.auto_detect(path, lang, reg_name=reg_name)
             self.save_config()
 
@@ -854,10 +940,6 @@ class SyrianSegoeApp(ctk.CTk):
                                 
                                 if not getattr(self, f"{lang}_{w}"): # عدم استبدال اختيار يدوي
                                     setattr(self, f"{lang}_{w}", full_path)
-                                    getattr(self, f"{lang}_{w}_lbl").configure(
-                                        text=self.t("auto_tag") + name.split(" (")[0], 
-                                        text_color=self._theme_auto_tag_color()
-                                    )
                 winreg.CloseKey(reg_key)
             except: pass
 
@@ -869,27 +951,23 @@ class SyrianSegoeApp(ctk.CTk):
                 full = os.path.join(dir_p, f)
                 if "light" in f_l and "semi" not in f_l and "light" in weight_keys:
                     setattr(self, f"{lang}_light", full)
-                    getattr(self, f"{lang}_light_lbl").configure(text=self.t("auto_tag") + f, text_color=self._theme_auto_tag_color())
                 elif "semilight" in f_l or ("semi" in f_l and "light" in f_l):
                     if "semilight" in weight_keys:
                         setattr(self, f"{lang}_semilight", full)
-                        getattr(self, f"{lang}_semilight_lbl").configure(text=self.t("auto_tag") + f, text_color=self._theme_auto_tag_color())
                 elif "semibold" in f_l or ("semi" in f_l and "bold" in f_l):
                     if "semibold" in weight_keys:
                         setattr(self, f"{lang}_semibold", full)
-                        getattr(self, f"{lang}_semibold_lbl").configure(text=self.t("auto_tag") + f, text_color=self._theme_auto_tag_color())
                 elif "bold" in f_l and "semi" not in f_l and "bold" in weight_keys:
                     setattr(self, f"{lang}_bold", full)
-                    getattr(self, f"{lang}_bold_lbl").configure(text=self.t("auto_tag") + f, text_color=self._theme_auto_tag_color())
                 elif ("black" in f_l or "heavy" in f_l) and "black" in weight_keys:
                     setattr(self, f"{lang}_black", full)
-                    getattr(self, f"{lang}_black_lbl").configure(text=self.t("auto_tag") + f, text_color=self._theme_auto_tag_color())
+        self.update_weight_labels(lang)
 
     def select_weight(self, lang, weight):
         path = filedialog.askopenfilename(filetypes=[("Font Files", "*.ttf *.otf")])
         if path:
             setattr(self, f"{lang}_{weight}", path)
-            getattr(self, f"{lang}_{weight}_lbl").configure(text=os.path.basename(path), text_color=self._theme_text_color())
+            self.update_weight_labels(lang)
             self.save_config()
 
     def are_clones_installed(self):

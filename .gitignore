@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 venv/
 Original_Segoe_Backups/
+build/
+dist/
+*.spec
